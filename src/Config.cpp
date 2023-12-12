@@ -1,4 +1,6 @@
 #include "Config.hpp"
+#include "utils.hpp"
+#include "colour.h"
 #include <fstream>
 
 static key_e	checkKey(const std::string &key)
@@ -18,15 +20,33 @@ static key_e	checkKey(const std::string &key)
 
 Config::Config(const std::string &configFile)
 {
-	std::ifstream	file(configFile);
+	std::ifstream	file;
 	std::string		line;
 	std::string		key;
 	std::string		val;
 	int				i = 0;
+
+	file.open(configFile);
 	if (file.is_open() == false)
 	{
-		std::cerr << "Error: File " << configFile << ": Could not be opened" << std::endl;
-		throw std::exception();
+		std::string	tempName;
+		char *irccPath = getenv("IRCC_PATH");
+		if (!irccPath)
+		{
+			std::cerr << RED "Error" RESET ": File " << configFile << ": Could not be opened" << std::endl;
+			throw std::runtime_error(RED "Error" RESET ": IRCC_PATH not set");
+		}
+		std::vector<std::string> paths = split(irccPath, ":");
+		for (std::vector<std::string>::iterator it = paths.begin(); it != paths.end(); ++it)
+		{
+			tempName = *it + "/" + configFile;
+			std::cout << "Trying file: " << tempName << std::endl;
+			file.open(tempName);
+			if (file.is_open())
+				break ;
+		}
+		if (file.is_open() == false)
+			throw std::runtime_error(RED "Error" RESET ": File " + configFile + ": Could not be opened\n");
 	}
 	while (std::getline(file, line))
 	{
@@ -35,7 +55,7 @@ Config::Config(const std::string &configFile)
 		std::size_t pos = line.find('=');
 		if (pos == std::string::npos)
 		{
-			std::cerr << "Error: Config: " << configFile << ":" << i << " Missing value" << std::endl;
+			std::cerr << RED "Error" RESET ": Config: " << configFile << ":" << i << " Missing value" << std::endl;
 			throw std::exception();
 		}
 		key = line.substr(0, pos);
@@ -59,7 +79,7 @@ Config::Config(const std::string &configFile)
 			this->realname = val;
 			break ;
 		case KEY_NONE:
-			std::cerr << "Error: Config: " << configFile << ":" << i << " `" << key << "` Unknown identifier" << std::endl;
+			std::cerr << RED "Error" RESET ": Config: " << configFile << ":" << i << " `" << key << "` Unknown identifier" << std::endl;
 			throw std::exception();
 			break ;
 		}
@@ -76,7 +96,7 @@ Config::Config(const std::string &configFile)
 		this->realname == ""
 	)
 	{
-		std::cerr << "Error: Config: " << configFile << " Missing fields" << std::endl;
+		std::cerr << RED "Error" RESET ": Config: " << configFile << " Missing fields" << std::endl;
 		std::cerr << "Required fields:" << std::endl;
 		std::cerr << " - username" << std::endl;
 		std::cerr << " - nickname" << std::endl;

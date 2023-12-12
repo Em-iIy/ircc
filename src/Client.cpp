@@ -1,5 +1,6 @@
 #include "Client.hpp"
 #include "utils.hpp"
+#include "colour.h"
 
 
 
@@ -142,16 +143,17 @@ Client::Client(const std::string &hostname, const std::string &port, const std::
 {
 	try
 	{
+		// Check if port is only numeric characters
 		if (port.find_first_not_of("0123456789") != std::string::npos)
 			throw std::invalid_argument("Must be a number!");
 		this->_port = std::stoi(port);
-		// Check if port is within valid
+		// Check if port is within valid range
 		if (this->_port < 0 || this->_port > 65536)
 			throw std::out_of_range("Must be between 0-65536");
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Error: port: " << e.what() << '\n';
+		std::cerr << RED "Error" RESET ": port: " << e.what() << '\n';
 		throw (std::exception());
 	}
 	this->pfds[0] = initPFD(STDIN_FILENO);
